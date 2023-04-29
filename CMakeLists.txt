@@ -2,7 +2,13 @@ cmake_minimum_required(VERSION 3.15)
 
 project(ato_frogger_project)
 
-add_executable(ato_frogger ato_frogger/source/ato_frogger.cpp)
+add_executable(ato_frogger 
+	ato_frogger/source/ato_frogger.cpp
+	ato_frogger/source/sprite.cpp
+	ato_frogger/source/sprite.h
+	ato_frogger/source/vec2_functions.h
+	ato_frogger/source/vec2_functions.cpp
+)
 
 add_subdirectory(box_renderer)
 
