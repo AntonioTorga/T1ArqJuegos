@@ -2,9 +2,19 @@
 #include <vector>
 #include "sprite.h"
 #include "vec2_functions.h"
-#include <iostream>
 #include <memory>
 
+
+void streets(BoxRenderer::Canvas& canvas) {
+    BoxRenderer::BoxId boxId = canvas.addBox({ {0.0,0.9}, BoxRenderer::Color(0.0,0.3922,0.0), {2.0,0.2} });
+    BoxRenderer::BoxId boxId2 = canvas.addBox({ {0.0,-0.9}, BoxRenderer::Color(0.0,0.3922,0.0), {2.0,0.2} });
+
+    for (float i = 2; i < 9; i++) {
+        for(float j = 0; j < 5; j++)
+        BoxRenderer::BoxId boxId = canvas.addBox({ { float(j * 0.4 - 0.8) , float(i * 0.2 - 1.0) }, BoxRenderer::Color::Yellow(), {0.15,0.025} });
+    }
+
+}
 void add_to_sprite(std::shared_ptr <GameObject::Sprite> sprite, BoxRenderer::Vec2 pos,  BoxRenderer::Color color, BoxRenderer::Vec2 size, BoxRenderer::Canvas& canvas, float scale) 
 {   
     BoxRenderer::BoxId boxId = canvas.addBox({pos*scale, color, size*scale}); 
@@ -13,14 +23,13 @@ void add_to_sprite(std::shared_ptr <GameObject::Sprite> sprite, BoxRenderer::Vec
 
 void create_bus(std::shared_ptr <GameObject::Sprite> busName, BoxRenderer::Canvas& canvas, float busScale)
 {
-    add_to_sprite(busName, { 0.0, 0.0 }, BoxRenderer::Color::Yellow(), { 0.6, 0.15 }, canvas, busScale); //body
+    add_to_sprite(busName, { 0.0, 0.0 }, BoxRenderer::Color::Blue(), { 0.6, 0.15 }, canvas, busScale); //body
     add_to_sprite(busName, { 0.28, 0.07 }, BoxRenderer::Color::Black(), { 0.05, 0.025 }, canvas, busScale); //wheels 
     add_to_sprite(busName, { -0.28, 0.07 }, BoxRenderer::Color::Black(), { 0.05, 0.025 }, canvas, busScale); //wheels 
     add_to_sprite(busName, { 0.28, -0.07 }, BoxRenderer::Color::Black(), { 0.05, 0.025 }, canvas, busScale); //wheels 
     add_to_sprite(busName, { -0.28, -0.07 }, BoxRenderer::Color::Black(), { 0.05, 0.025 }, canvas, busScale); //wheels 
-
-
 }
+
 void create_car(std::shared_ptr <GameObject::Sprite> carName, BoxRenderer::Canvas& canvas, float carScale)
 {
     add_to_sprite(carName, { 0.0, 0.0 }, BoxRenderer::Color::Red(), { 0.2, 0.15 }, canvas, carScale); //body
@@ -29,6 +38,7 @@ void create_car(std::shared_ptr <GameObject::Sprite> carName, BoxRenderer::Canva
     add_to_sprite(carName, { -0.095, 0.075 }, BoxRenderer::Color::Black(), { 0.05, 0.025 }, canvas, carScale); //wheels 
     add_to_sprite(carName, { -0.095, -0.075 }, BoxRenderer::Color::Black(), { 0.05, 0.025 }, canvas, carScale); //wheels 
 }
+
 int main()
 {
     constexpr unsigned int SCR_WIDTH = 600;
@@ -43,6 +53,8 @@ int main()
     std::vector<std::shared_ptr <GameObject::Sprite>> objects; //keeps the sprite objects from the game
     
 // set objets
+//background
+    streets(canvas);
 // Main character
     float scale = 0.2;
     std::shared_ptr <GameObject::Sprite> main(new  GameObject::Sprite({0.0,-0.9},{0.0,0.0},{1,1}));
@@ -60,7 +72,7 @@ int main()
     add_to_sprite(main, { -0.05, 0.48 }, BoxRenderer::Color::Black(), { 0.025, 0.025 }, canvas, scale);
 
 //Cars
-    float carScale = 1;
+    float carScale = 0.75;
     std::shared_ptr <GameObject::Sprite> carRed6(new GameObject::Sprite({ -1.00 ,0.7 }, { 0.0006 ,0.0 }, { 1, 1 })); //1
     std::shared_ptr <GameObject::Sprite> carRed7(new GameObject::Sprite({ 0.5 ,0.7 }, { 0.0006 ,0.0 }, { 1, 1 })); //1
     std::shared_ptr <GameObject::Sprite> carRed2(new GameObject::Sprite({ 1.49 ,0.3 }, { -0.0005 ,0.0 }, { 1, 1})); //3
@@ -106,16 +118,35 @@ int main()
     objects.push_back(busYellow5);
     objects.push_back(busYellow7);
 
+
+
     auto update = [&](float dt)
     {   
-        //receive and execute events
+        //update graphics
         for(std::shared_ptr <GameObject::Sprite> object : objects){
+
+            BoxRenderer::Vec2 grid_pos_old = object->get_gridPos();
+            if (grid_pos_old.x!=-1)
+            {   
+                grid[grid_pos_old.x][grid_pos_old.y] = false;
+            }
+
+            //update graphics and positions
             object->update(dt, canvas);
+            //update grid
+            
+            BoxRenderer::Vec2 grid_pos_new = GameObject::gridPosition(object->get_pos());
+            if (grid_pos_new.y == 0) canvas.close(); //solo se mueve por ahi el maincharacter
+            if ((0 <= grid_pos_new.x && grid_pos_new.x <= 9) && (0 <= grid_pos_new.y && grid_pos_new.y <= 9)){
+                object->get_gridPos() = grid_pos_new;
+                if (grid[grid_pos_new.x][grid_pos_new.y])  canvas.close();
+                else {grid[grid_pos_new.x][grid_pos_new.y]=true;}
+            }
         }
     };
     
     Alice::Controller controller;
-    controller.onKeyPress(Alice::Key::W, [&]() 
+    controller.onKeyPress(Alice::Key::UP, [&]() 
         { 
             main->get_pos().y = main->get_pos().y + 0.2;
             for(BoxRenderer::BoxId box : main->get_boxes() )
@@ -124,7 +155,7 @@ int main()
                 b.position().y = b.position().y + 0.2;
             }
         });
-    controller.onKeyPress(Alice::Key::S, [&]() 
+    controller.onKeyPress(Alice::Key::DOWN, [&]() 
         { 
             main->get_pos().y = main->get_pos().y - 0.2;
             for (BoxRenderer::BoxId box : main->get_boxes())
@@ -133,7 +164,7 @@ int main()
                 b.position().y = b.position().y - 0.2;
             }
         });
-    controller.onKeyPress(Alice::Key::D, [&]()
+    controller.onKeyPress(Alice::Key::RIGHT, [&]()
         {
             main->get_pos().x = main->get_pos().x + 0.2;
             for (BoxRenderer::BoxId box : main->get_boxes())
@@ -142,7 +173,7 @@ int main()
                 b.position().x = b.position().x + 0.2;
             }
         });
-    controller.onKeyPress(Alice::Key::A, [&]()
+    controller.onKeyPress(Alice::Key::LEFT, [&]()
         {
             main->get_pos().x = main->get_pos().x - 0.2;
             for (BoxRenderer::BoxId box : main->get_boxes())
@@ -151,8 +182,6 @@ int main()
                 b.position().x = b.position().x - 0.2;
             }
         });
-    //controller.onKeyPress(Alice::Key::S, [&]() { speed /= 2.0f; });
-    //controller.onKeyPress(Alice::Key::ESCAPE, [&]() { canvas.close(); });
+
     canvas.drawScene(controller, update);
-    //definimos las cajas para cada object y las añadimos a mBoxes
 }

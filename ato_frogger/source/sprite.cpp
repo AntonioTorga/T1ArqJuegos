@@ -34,10 +34,10 @@ void GameObject::Sprite::add_box(BoxRenderer::BoxId& box,  BoxRenderer::Canvas& 
     b.position() = b.position() + get_pos();
 }
 
-BoxRenderer::Vec2 GameObject::gridPosition(const BoxRenderer::Vec2& position){
-    BoxRenderer::Vec2 new_Gp = { std::copysign(ceil(abs(position.x) / 0.2),position.x), std::copysign(ceil(abs(position.y) / 0.2),position.y) };
-    new_Gp.x += 5; //translate to grid pos
-    new_Gp.y -= 5;
+BoxRenderer::Vec2 GameObject::gridPosition(const BoxRenderer::Vec2& position) {
+    BoxRenderer::Vec2 new_Gp = position + BoxRenderer::Vec2{1,-1};
+    new_Gp.x = floor(new_Gp.x / 0.2);
+    new_Gp.y = floor(new_Gp.y / -0.2);
     return new_Gp;
 }
 
